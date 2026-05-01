@@ -1,0 +1,62 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info
+*.eg
+ckpt
+*.ckpt
+*.pth
+
+*.ipynb
+*.bin
+log.txt
+*_log
+*.log
+
+flagged/
+script/
+wandb
+log/
+tiny_*
+lora-*
+results
+
+# Ignore for lm-evaluation-harness
+env
+lm_cache
+.idea
+*.log
+*.egg-info
+
+# Training outputs (pruned models, tuned checkpoints)
+prune_log/
+tune_log/
+checkpoint-*/
+adapter_model.bin
+pytorch_model.bin
+
+# Dataset caches and downloaded data
+datasets/cache/
+data/
+*.jsonl
+*.parquet
+*.arrow
+
+# HuggingFace / Transformers caches
+.cache/
+transformers_cache/
+huggingface_cache/
+
+# Temporary files
+tmp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
