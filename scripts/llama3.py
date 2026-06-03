@@ -317,6 +317,10 @@ if __name__ == "__main__":
     parser.add_argument('--save_model', action='store_true', help='if save model')
     args = parser.parse_args()
 
+    # Strip quotes from paths (Gradio may pass them)
+    args.base_model = args.base_model.strip().strip('"').strip("'")
+    args.save_ckpt_log_name = args.save_ckpt_log_name.strip().strip('"').strip("'")
+
     torch_version = float('.'.join(torch.__version__.split('.')[:2]))
     args.torch_version = torch_version
     main(args)

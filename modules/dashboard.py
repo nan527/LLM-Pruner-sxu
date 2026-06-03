@@ -21,15 +21,15 @@ SHORT = [
     "剪枝50%", "+LoRA", "+W8", "+W4", "+DynINT8"
 ]
 
-# Design tokens — dark blue glass palette
+# Design tokens — brightened blue glass palette
 C = {
-    "bg": "rgba(8, 14, 26, 0)",
-    "paper": "rgba(10, 18, 36, 0)",
-    "plot": "rgba(10, 18, 36, 0.4)",
-    "grid": "rgba(59, 130, 246, 0.06)",
-    "text": "#94a3b8",
-    "text2": "#cbd5e1",
-    "title": "#e8edf5",
+    "bg": "rgba(18, 32, 56, 0)",
+    "paper": "rgba(22, 38, 66, 0)",
+    "plot": "rgba(22, 38, 66, 0.25)",
+    "grid": "rgba(100, 160, 255, 0.12)",
+    "text": "#c8daf0",
+    "text2": "#e8f0ff",
+    "title": "#ffffff",
     "accent": "#3b82f6",
     "cyan": "#06b6d4",
     "emerald": "#10b981",
@@ -117,20 +117,20 @@ def _cards_html():
 
     card_style = (
         "flex:1;min-width:220px;"
-        "background:rgba(12,20,44,0.5);"
+        "background:rgba(28,45,80,0.4);"
         "backdrop-filter:blur(24px) saturate(1.6);"
         "-webkit-backdrop-filter:blur(24px) saturate(1.6);"
-        "border:1px solid rgba(59,130,246,0.08);"
-        "border-top:1px solid rgba(59,130,246,0.15);"
+        "border:1px solid rgba(100,160,255,0.15);"
+        "border-top:1px solid rgba(100,160,255,0.2);"
         "border-radius:16px;"
         "padding:26px 28px;"
-        "box-shadow:0 1px 2px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.25),0 12px 40px rgba(0,0,0,0.2),inset 0 1px 0 rgba(59,130,246,0.06);"
+        "box-shadow:0 1px 2px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.1),0 12px 40px rgba(0,0,0,0.08),inset 0 1px 0 rgba(100,160,255,0.1);"
         "transition:all 0.35s cubic-bezier(0.4,0,0.2,1);"
         "animation:cardFadeIn 0.6s cubic-bezier(0.4,0,0.2,1) both;"
     )
     label_style = "font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;font-family:'Outfit',sans-serif;"
     val_style = "font-family:'JetBrains Mono',monospace;font-weight:700;"
-    sub_style = "color:#64748b;font-size:11px;font-family:'Noto Sans SC',sans-serif;letter-spacing:0.02em;"
+    sub_style = "color:#b0c4e0;font-size:11px;font-family:'Noto Sans SC',sans-serif;letter-spacing:0.02em;"
     gap_style = "display:flex;gap:32px;margin-top:16px;"
 
     return f"""
@@ -141,35 +141,35 @@ def _cards_html():
     }}
     .glass-card-metric:hover {{
         transform: translateY(-3px) !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.35),0 8px 32px rgba(0,0,0,0.3),0 24px 64px rgba(0,0,0,0.25),inset 0 1px 0 rgba(59,130,246,0.08) !important;
-        border-color: rgba(59,130,246,0.25) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2),0 8px 32px rgba(0,0,0,0.15),0 24px 64px rgba(0,0,0,0.1),inset 0 1px 0 rgba(100,160,255,0.12) !important;
+        border-color: rgba(100,160,255,0.35) !important;
     }}
     </style>
     <div style="display:flex;gap:16px;margin:20px 0;flex-wrap:wrap;">
         <div class="glass-card-metric" style="{card_style}border-top:3px solid rgba(59,130,246,0.4);animation-delay:0.05s;">
-            <div style="{label_style}color:#60a5fa;">✦ 推荐方案</div>
-            <div style="color:#e8edf5;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">剪枝 25% + LoRA + W4</div>
+            <div style="{label_style}color:#93c5fd;">✦ 推荐方案</div>
+            <div style="color:#ffffff;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">剪枝 25% + LoRA + W4</div>
             <div style="{gap_style}">
-                <div><span style="{sub_style}">困惑度</span><br/><span style="{val_style}color:#60a5fa;font-size:26px;">{best['PPL']}</span></div>
-                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#e8edf5;font-size:26px;">{best['Size(MB)']}<span style="font-size:12px;color:#64748b;"> MB</span></span></div>
-                <div><span style="{sub_style}">压缩比</span><br/><span style="{val_style}color:#f59e0b;font-size:26px;">{best['Ratio']}x</span></div>
+                <div><span style="{sub_style}">困惑度</span><br/><span style="{val_style}color:#93c5fd;font-size:26px;">{best['PPL']}</span></div>
+                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#ffffff;font-size:26px;">{best['Size(MB)']}<span style="font-size:12px;color:#b0c4e0;"> MB</span></span></div>
+                <div><span style="{sub_style}">压缩比</span><br/><span style="{val_style}color:#fbbf24;font-size:26px;">{best['Ratio']}x</span></div>
             </div>
         </div>
         <div class="glass-card-metric" style="{card_style}border-top:3px solid rgba(6,182,212,0.35);animation-delay:0.10s;">
             <div style="{label_style}color:#06b6d4;">⚡ 极限压缩</div>
-            <div style="color:#e8edf5;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">剪枝 50% + LoRA + W4</div>
+            <div style="color:#ffffff;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">剪枝 50% + LoRA + W4</div>
             <div style="{gap_style}">
-                <div><span style="{sub_style}">困惑度</span><br/><span style="{val_style}color:#f43f5e;font-size:26px;">{extreme['PPL']}</span></div>
-                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#e8edf5;font-size:26px;">{extreme['Size(MB)']}<span style="font-size:12px;color:#64748b;"> MB</span></span></div>
+                <div><span style="{sub_style}">困惑度</span><br/><span style="{val_style}color:#fb7185;font-size:26px;">{extreme['PPL']}</span></div>
+                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#ffffff;font-size:26px;">{extreme['Size(MB)']}<span style="font-size:12px;color:#b0c4e0;"> MB</span></span></div>
                 <div><span style="{sub_style}">压缩比</span><br/><span style="{val_style}color:#f59e0b;font-size:26px;">{extreme['Ratio']}x</span></div>
             </div>
         </div>
         <div class="glass-card-metric" style="{card_style}border-top:3px solid rgba(244,63,94,0.25);animation-delay:0.15s;">
             <div style="{label_style}color:#f43f5e;">✕ 谨慎使用</div>
-            <div style="color:#e8edf5;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">Dynamic INT8</div>
+            <div style="color:#ffffff;font-size:16px;font-weight:700;margin-bottom:4px;font-family:'Noto Sans SC',sans-serif;">Dynamic INT8</div>
             <div style="{gap_style}">
                 <div><span style="{sub_style}">困惑度</span><br/><span style="{val_style}color:#f43f5e;font-size:26px;">81.82</span></div>
-                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#e8edf5;font-size:26px;">250<span style="font-size:12px;color:#64748b;"> MB</span></span></div>
+                <div><span style="{sub_style}">体积</span><br/><span style="{val_style}color:#ffffff;font-size:26px;">250<span style="font-size:12px;color:#b0c4e0;"> MB</span></span></div>
                 <div><span style="{sub_style}">压缩比</span><br/><span style="{val_style}color:#f59e0b;font-size:26px;">8.8x</span></div>
             </div>
         </div>
@@ -198,25 +198,25 @@ def _table_html():
         else:
             ratio_color = "#64748b"
 
-        bg = "rgba(10,18,36,0.25)" if i % 2 == 0 else "rgba(10,18,36,0.4)"
+        bg = "rgba(20,34,60,0.15)" if i % 2 == 0 else "rgba(20,34,60,0.3)"
         rows += f"""
         <tr style="background:{bg};">
-            <td style="padding:14px 20px;text-align:left;color:#cbd5e1;font-weight:500;border-top:1px solid rgba(59,130,246,0.04);font-family:'Noto Sans SC',sans-serif;font-size:14px;">{r['Version']}</td>
-            <td style="padding:14px 20px;text-align:center;color:{ppl_color};font-weight:700;font-size:17px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.04);">{ppl:.2f}</td>
-            <td style="padding:14px 20px;text-align:center;color:#cbd5e1;font-weight:600;font-size:15px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.04);">{r['Size(MB)']}</td>
-            <td style="padding:14px 20px;text-align:center;color:{ratio_color};font-weight:700;font-size:17px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.04);">{ratio}x</td>
+            <td style="padding:14px 20px;text-align:left;color:#e8f0ff;font-weight:500;border-top:1px solid rgba(59,130,246,0.05);font-family:'Noto Sans SC',sans-serif;font-size:14px;">{r['Version']}</td>
+            <td style="padding:14px 20px;text-align:center;color:{ppl_color};font-weight:700;font-size:17px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.05);">{ppl:.2f}</td>
+            <td style="padding:14px 20px;text-align:center;color:#e8f0ff;font-weight:600;font-size:15px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.05);">{r['Size(MB)']}</td>
+            <td style="padding:14px 20px;text-align:center;color:{ratio_color};font-weight:700;font-size:17px;font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(59,130,246,0.05);">{ratio}x</td>
         </tr>
         """
 
     return f"""
-    <div style="border-radius:16px;overflow:hidden;border:1px solid rgba(59,130,246,0.08);box-shadow:0 1px 2px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.25);margin:16px 0;">
+    <div style="border-radius:16px;overflow:hidden;border:1px solid rgba(100,160,255,0.15);box-shadow:0 1px 2px rgba(0,0,0,0.12),0 4px 12px rgba(0,0,0,0.08);margin:16px 0;">
         <table style="width:100%;border-collapse:collapse;">
             <thead>
-                <tr style="background:rgba(12,20,44,0.7);">
-                    <th style="padding:16px 20px;text-align:left;color:#94a3b8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(59,130,246,0.1);font-family:'Noto Sans SC',sans-serif;">版本</th>
-                    <th style="padding:16px 20px;text-align:center;color:#94a3b8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(59,130,246,0.1);font-family:'Noto Sans SC',sans-serif;">困惑度 ↓</th>
-                    <th style="padding:16px 20px;text-align:center;color:#94a3b8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(59,130,246,0.1);font-family:'Noto Sans SC',sans-serif;">体积 (MB)</th>
-                    <th style="padding:16px 20px;text-align:center;color:#94a3b8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(59,130,246,0.1);font-family:'Noto Sans SC',sans-serif;">压缩比 ↑</th>
+                <tr style="background:rgba(28,45,80,0.45);">
+                    <th style="padding:16px 20px;text-align:left;color:#d0e0f8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(100,160,255,0.18);font-family:'Noto Sans SC',sans-serif;">版本</th>
+                    <th style="padding:16px 20px;text-align:center;color:#d0e0f8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(100,160,255,0.18);font-family:'Noto Sans SC',sans-serif;">困惑度 ↓</th>
+                    <th style="padding:16px 20px;text-align:center;color:#d0e0f8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(100,160,255,0.18);font-family:'Noto Sans SC',sans-serif;">体积 (MB)</th>
+                    <th style="padding:16px 20px;text-align:center;color:#d0e0f8;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(100,160,255,0.18);font-family:'Noto Sans SC',sans-serif;">压缩比 ↑</th>
                 </tr>
             </thead>
             <tbody>
@@ -228,7 +228,7 @@ def _table_html():
 
 
 def build_dashboard():
-    gr.Markdown("## 实验结果汇总\n<span style='font-size:15px;color:#64748b;'>Wikitext-2 困惑度 · 模型体积 · 压缩比</span>", elem_id="dash-title")
+    gr.Markdown("## 实验结果汇总\n<span style='font-size:15px;color:#c8daf0;'>Wikitext-2 困惑度 · 模型体积 · 压缩比</span>", elem_id="dash-title")
     gr.HTML(_cards_html())
     gr.HTML(_table_html())
 

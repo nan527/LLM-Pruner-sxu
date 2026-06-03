@@ -21,6 +21,7 @@ def _run_script(cmd_args):
     """Generator: run a script with subprocess, yield accumulated output."""
     cmd = [sys.executable] + cmd_args
     env = os.environ.copy()
+    env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + env.get("PYTHONPATH", "")
     env.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
     env.setdefault("HF_HUB_DISABLE_SSL_VERIFY", "1")
     process = subprocess.Popen(
@@ -99,6 +100,8 @@ def _calc_model_size_bits(model, quant_bits=4, group_size=128):
 
 def run_pruning(base_model, pruning_ratio, mlp_start, mlp_end,
                 attn_start, attn_end, save_name):
+    base_model = base_model.strip().strip('"').strip("'")
+    save_name = save_name.strip().strip('"').strip("'")
     args = [
         "scripts/llama3.py",
         "--base_model", base_model,
@@ -122,6 +125,10 @@ def run_pruning(base_model, pruning_ratio, mlp_start, mlp_end,
 
 def run_finetuning(prune_model, data_path, lora_r, num_epochs,
                    learning_rate, batch_size, output_dir, base_model):
+    prune_model = prune_model.strip().strip('"').strip("'")
+    data_path = data_path.strip().strip('"').strip("'")
+    output_dir = output_dir.strip().strip('"').strip("'")
+    base_model = base_model.strip().strip('"').strip("'")
     args = [
         "scripts/post_training.py",
         "--prune_model", prune_model,
@@ -141,6 +148,8 @@ def run_finetuning(prune_model, data_path, lora_r, num_epochs,
 # ============================================================
 
 def run_quantization(prune_path, lora_path, quant_methods):
+    prune_path = prune_path.strip().strip('"').strip("'")
+    lora_path = lora_path.strip().strip('"').strip("'") if lora_path else lora_path
     device = "cuda" if torch.cuda.is_available() else "cpu"
     log_lines = []
 
