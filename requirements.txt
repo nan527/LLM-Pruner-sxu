@@ -1,0 +1,48 @@
+# ============================================================
+# LLM Compression Experiment Platform - Dependencies
+# ============================================================
+# Python >= 3.9  |  CUDA >= 12.0  |  GPU Memory >= 8GB
+# Install: pip install -r requirements.txt
+# ============================================================
+
+# ---- Core Deep Learning ----
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# ---- HuggingFace Ecosystem ----
+transformers>=4.30.0
+datasets>=2.14.0
+accelerate>=0.21.0
+sentencepiece>=0.1.99
+huggingface_hub>=0.16.0,<1.0
+
+# ---- Parameter-Efficient Fine-Tuning ----
+# (bundled in LLMPruner/peft/, no pip install needed)
+# peft>=0.4.0
+
+# ---- Web UI ----
+gradio>=4.0.0,<6.0
+plotly>=5.18.0
+
+# ---- Quantization ----
+# auto-gptq>=0.4.0       # optional: GPTQ library
+# bitsandbytes>=0.41.0    # optional: INT8/INT4 quantization
+
+# ---- Evaluation & Metrics ----
+rouge-score>=0.0.4
+sacrebleu==1.5.0
+scikit-learn>=1.0.0
+
+# ---- Utilities ----
+ptflops>=0.7.0
+wandb>=0.15.0
+jsonlines>=3.1.0
+numexpr>=2.8.0
+sqlitedict>=2.1.0
+omegaconf>=2.3.0
+pytablewriter>=1.0.0
+pycountry>=22.0.0
+importlib-resources>=5.0.0
+tqdm>=4.60.0
+numpy>=1.24.0

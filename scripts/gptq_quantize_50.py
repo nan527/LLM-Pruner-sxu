@@ -3,10 +3,25 @@ os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 import datasets
 import torch
 import time
+import logging
+from datetime import datetime
 from LLMPruner.peft import PeftModel
 from LLMPruner.evaluator.ppl import PPLMetric
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Setup logging
+log_dir = os.path.join("quant_log", "tinyllama_quant_50", datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+os.makedirs(log_dir, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s :       %(message)s",
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, "training.log")),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 def quantize_weight_per_group(weight, bits=4, group_size=128):
     orig_shape = weight.shape
@@ -35,7 +50,7 @@ def quantize_model_weights(model, bits=4, group_size=128):
         if isinstance(module, torch.nn.Linear):
             module.weight.data = quantize_weight_per_group(module.weight.data, bits=bits, group_size=group_size)
             count += 1
-    print(f"    Quantized {count} Linear layers to INT{bits}")
+    logger.info(f"    Quantized {count} Linear layers to INT{bits}")
     return model
 
 def calc_model_size_bits(model, quant_bits=4, group_size=128):
@@ -63,7 +78,7 @@ def load_model_with_lora(prune_path, lora_path):
 # ============================================================
 # 50% pruned + LoRA + W4
 # ============================================================
-print("=== 50% Pruned + LoRA + W4 ===")
+logger.info("=== 50% Pruned + LoRA + W4 ===")
 model, tokenizer = load_model_with_lora(
     "prune_log/tinyllama_prune_50/pytorch_model.bin",
     "tune_log/tinyllama_tune_50"
@@ -73,7 +88,7 @@ model = quantize_model_weights(model, bits=4, group_size=128)
 start = time.time()
 ppl_w4_50 = PPLMetric(model, tokenizer, ['wikitext2'], seq_len=128, batch_size=1, device=device)
 time_w4_50 = time.time() - start
-print(f"    PPL: {ppl_w4_50['wikitext2']:.2f}, Size: ~{est_size_w4_50:.0f} MB, Time: {time_w4_50:.0f}s")
+logger.info(f"    PPL: {ppl_w4_50['wikitext2']:.2f}, Size: ~{est_size_w4_50:.0f} MB, Time: {time_w4_50:.0f}s")
 
 del model
 torch.cuda.empty_cache()
@@ -81,7 +96,7 @@ torch.cuda.empty_cache()
 # ============================================================
 # 50% pruned + LoRA + W8
 # ============================================================
-print("\n=== 50% Pruned + LoRA + W8 ===")
+logger.info("\n=== 50% Pruned + LoRA + W8 ===")
 model, tokenizer = load_model_with_lora(
     "prune_log/tinyllama_prune_50/pytorch_model.bin",
     "tune_log/tinyllama_tune_50"
@@ -91,27 +106,27 @@ model = quantize_model_weights(model, bits=8, group_size=128)
 start = time.time()
 ppl_w8_50 = PPLMetric(model, tokenizer, ['wikitext2'], seq_len=128, batch_size=1, device=device)
 time_w8_50 = time.time() - start
-print(f"    PPL: {ppl_w8_50['wikitext2']:.2f}, Size: ~{est_size_w8_50:.0f} MB, Time: {time_w8_50:.0f}s")
+logger.info(f"    PPL: {ppl_w8_50['wikitext2']:.2f}, Size: ~{est_size_w8_50:.0f} MB, Time: {time_w8_50:.0f}s")
 
 # ============================================================
 # Full Summary
 # ============================================================
-print("\n" + "=" * 75)
-print("COMPLETE COMPARISON TABLE")
-print("=" * 75)
-print(f"{'Model Version':<40} {'PPL':>8} {'Size(MB)':>10} {'Ratio':>8}")
-print("-" * 75)
-print(f"{'Original TinyLlama (FP16)':<40} {'17.42':>8} {'2200':>10} {'1.0x':>8}")
-print()
-print(f"{'--- Pruning 25% ---':<40}")
-print(f"{'  Pruned 25%':<40} {'35.95':>8} {'1762':>10} {'1.2x':>8}")
-print(f"{'  + LoRA (FP16)':<40} {'26.71':>8} {'1762':>10} {'1.2x':>8}")
-print(f"{'  + LoRA + W8':<40} {'26.71':>8} {'969':>10} {'2.3x':>8}")
-print(f"{'  + LoRA + W4':<40} {'30.75':>8} {'560':>10} {'3.9x':>8}")
-print()
-print(f"{'--- Pruning 50% ---':<40}")
-print(f"{'  Pruned 50%':<40} {'90.72':>8} {'1426':>10} {'1.5x':>8}")
-print(f"{'  + LoRA (FP16)':<40} {'45.18':>8} {'1426':>10} {'1.5x':>8}")
-print(f"{'  + LoRA + W8':<40} {ppl_w8_50['wikitext2']:>8.2f} {f'{est_size_w8_50:.0f}':>10} {f'{2200/est_size_w8_50:.1f}x':>8}")
-print(f"{'  + LoRA + W4':<40} {ppl_w4_50['wikitext2']:>8.2f} {f'{est_size_w4_50:.0f}':>10} {f'{2200/est_size_w4_50:.1f}x':>8}")
-print("=" * 75)
+logger.info("\n" + "=" * 75)
+logger.info("COMPLETE COMPARISON TABLE")
+logger.info("=" * 75)
+logger.info(f"{'Model Version':<40} {'PPL':>8} {'Size(MB)':>10} {'Ratio':>8}")
+logger.info("-" * 75)
+logger.info(f"{'Original TinyLlama (FP16)':<40} {'17.42':>8} {'2200':>10} {'1.0x':>8}")
+logger.info("")
+logger.info(f"{'--- Pruning 25% ---':<40}")
+logger.info(f"{'  Pruned 25%':<40} {'35.95':>8} {'1762':>10} {'1.2x':>8}")
+logger.info(f"{'  + LoRA (FP16)':<40} {'26.71':>8} {'1762':>10} {'1.2x':>8}")
+logger.info(f"{'  + LoRA + W8':<40} {'26.71':>8} {'969':>10} {'2.3x':>8}")
+logger.info(f"{'  + LoRA + W4':<40} {'30.75':>8} {'560':>10} {'3.9x':>8}")
+logger.info("")
+logger.info(f"{'--- Pruning 50% ---':<40}")
+logger.info(f"{'  Pruned 50%':<40} {'90.72':>8} {'1426':>10} {'1.5x':>8}")
+logger.info(f"{'  + LoRA (FP16)':<40} {'45.18':>8} {'1426':>10} {'1.5x':>8}")
+logger.info(f"{'  + LoRA + W8':<40} {ppl_w8_50['wikitext2']:>8.2f} {f'{est_size_w8_50:.0f}':>10} {f'{2200/est_size_w8_50:.1f}x':>8}")
+logger.info(f"{'  + LoRA + W4':<40} {ppl_w4_50['wikitext2']:>8.2f} {f'{est_size_w4_50:.0f}':>10} {f'{2200/est_size_w4_50:.1f}x':>8}")
+logger.info("=" * 75)

@@ -1,17 +1,16 @@
-"""Module B: Experiment Platform — 剪枝 / 微调 / 量化"""
+"""Module B: Experiment Platform - pruning / fine-tuning / quantization"""
 import os
 import sys
 import subprocess
 import time
 import ssl
-import gradio as gr
 import torch
+import gradio as gr
 from LLMPruner.peft import PeftModel
 from LLMPruner.evaluator.ppl import PPLMetric
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# HuggingFace mirror for China mainland access
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "0")
 os.environ.setdefault("HF_HUB_DISABLE_SSL_VERIFY", "1")
@@ -45,7 +44,7 @@ def _run_script(cmd_args):
 
 
 # ============================================================
-# Quantization functions
+# Quantization functions (unchanged)
 # ============================================================
 
 def _quantize_weight_per_group(weight, bits=4, group_size=128):
@@ -95,13 +94,13 @@ def _calc_model_size_bits(model, quant_bits=4, group_size=128):
 
 
 # ============================================================
-# B1: Pruning
+# Step 1: Pruning
 # ============================================================
 
 def run_pruning(base_model, pruning_ratio, mlp_start, mlp_end,
                 attn_start, attn_end, save_name):
     args = [
-        "llama3.py",
+        "scripts/llama3.py",
         "--base_model", base_model,
         "--pruning_ratio", str(pruning_ratio),
         "--device", "cuda", "--eval_device", "cuda",
@@ -117,10 +116,14 @@ def run_pruning(base_model, pruning_ratio, mlp_start, mlp_end,
     yield from _run_script(args)
 
 
+# ============================================================
+# Step 2: LoRA Fine-tuning
+# ============================================================
+
 def run_finetuning(prune_model, data_path, lora_r, num_epochs,
                    learning_rate, batch_size, output_dir, base_model):
     args = [
-        "post_training.py",
+        "scripts/post_training.py",
         "--prune_model", prune_model,
         "--data_path", data_path,
         "--lora_r", str(int(lora_r)),
@@ -133,6 +136,10 @@ def run_finetuning(prune_model, data_path, lora_r, num_epochs,
     yield from _run_script(args)
 
 
+# ============================================================
+# Step 3: Quantization
+# ============================================================
+
 def run_quantization(prune_path, lora_path, quant_methods):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     log_lines = []
@@ -142,34 +149,34 @@ def run_quantization(prune_path, lora_path, quant_methods):
         return "".join(log_lines)
 
     if not quant_methods:
-        yield " 未选择量化方法"
+        yield "未选择量化方法"
         return
 
-    yield log(f" Loading pruned model: {prune_path}...")
+    yield log(f"加载剪枝模型: {prune_path}...")
     pruned_dict = torch.load(prune_path, map_location="cpu", weights_only=False)
     tokenizer = pruned_dict["tokenizer"]
     model = pruned_dict["model"]
     model.half().to(device)
 
     if lora_path and os.path.exists(lora_path):
-        yield log(f" Loading LoRA adapter: {lora_path}...")
+        yield log(f"加载 LoRA 适配器: {lora_path}...")
         model = PeftModel.from_pretrained(model, lora_path, torch_dtype=torch.float16)
         model = model.merge_and_unload()
         model.to(device)
-        yield log(" LoRA merged.")
+        yield log("LoRA 已合并.")
 
     results = []
 
     if "GPTQ-W8" in quant_methods:
         yield log("\n[1/2] GPTQ INT8 Weight-Only Quantization")
         est = _calc_model_size_bits(model, quant_bits=8, group_size=128)
-        yield log(f"    Estimated size: {est:.1f} MB")
+        yield log(f"  预估大小: {est:.1f} MB")
         model_int8 = _quantize_model_weights(model, bits=8, group_size=128)
         start = time.time()
         ppl = PPLMetric(model_int8, tokenizer, ["wikitext2"], seq_len=128, batch_size=1, device=device)
         elapsed = time.time() - start
         results.append(f"GPTQ-W8  PPL={ppl['wikitext2']:.2f}  Size={est:.0f}MB  Time={elapsed:.0f}s")
-        yield log(f"    {results[-1]}")
+        yield log(f"  {results[-1]}")
         del model_int8
         torch.cuda.empty_cache()
 
@@ -183,37 +190,43 @@ def run_quantization(prune_path, lora_path, quant_methods):
             model2 = model2.merge_and_unload()
             model2.to(device)
         est = _calc_model_size_bits(model2, quant_bits=4, group_size=128)
-        yield log(f"    Estimated size: {est:.1f} MB")
+        yield log(f"  预估大小: {est:.1f} MB")
         model_int4 = _quantize_model_weights(model2, bits=4, group_size=128)
         start = time.time()
         ppl = PPLMetric(model_int4, tokenizer, ["wikitext2"], seq_len=128, batch_size=1, device=device)
         elapsed = time.time() - start
         results.append(f"GPTQ-W4  PPL={ppl['wikitext2']:.2f}  Size={est:.0f}MB  Time={elapsed:.0f}s")
-        yield log(f"    {results[-1]}")
+        yield log(f"  {results[-1]}")
         del model_int4
         torch.cuda.empty_cache()
 
     yield log(f"\n{'='*50}")
-    yield log(" 量化评估完成")
+    yield log("量化评估完成")
     for r in results:
-        yield log(f"   {r}")
+        yield log(f"  {r}")
     yield log(f"{'='*50}")
 
 
-def build_experiment():
-    gr.HTML("""
-    <div style="margin-bottom:16px;">
-        <h2 style="color:#c9d1d9;font-size:20px;font-weight:600;margin:0;">实验操作面板</h2>
-        <p style="color:#556070;font-size:13px;margin:4px 0 12px 0;">按顺序执行：结构化剪枝 → LoRA 微调恢复 → 量化评估</p>
-    </div>
-    """)
+# ============================================================
+# UI
+# ============================================================
 
-    # ---- Pruning ----
-    with gr.Accordion(" Step 1 &mdash; 结构化剪枝 (Taylor)", open=True):
-        gr.HTML("""<p style="color:#66758a;font-size:13px;margin:0 0 4px 0;">使用 Taylor 一阶重要性估计，对 Attention 与 MLP 模块进行 block-wise 剪枝</p>""")
-        with gr.Row(equal_height=True):
+def build_experiment():
+    gr.Markdown(
+        "## 实验操作面板\n"
+        "按顺序执行：结构化剪枝 → LoRA 微调恢复 → 量化评估"
+    )
+
+    # ---- Step 1: Pruning ----
+    with gr.Accordion("Step 1 — 结构化剪枝 (Taylor)", open=True):
+        gr.Markdown("使用 Taylor 一阶重要性估计，对 Attention 与 MLP 模块进行 block-wise 剪枝")
+        with gr.Row():
             with gr.Column(scale=2):
-                prune_base = gr.Textbox(label="基础模型路径", value="F:\\Download\\tinyllama_model", placeholder="HuggingFace 模型名或本地路径")
+                prune_base = gr.Textbox(
+                    label="基础模型路径",
+                    value="F:\\Download\\tinyllama_model",
+                    placeholder="HuggingFace 模型名或本地路径",
+                )
                 prune_save = gr.Textbox(label="输出名称", value="tinyllama_prune")
             with gr.Column(scale=1):
                 prune_ratio = gr.Slider(0.1, 0.9, value=0.25, step=0.05, label="剪枝比例")
@@ -224,11 +237,12 @@ def build_experiment():
                 prune_attn_start = gr.Number(label="Attn 起始层", value=4, precision=0)
                 prune_attn_end = gr.Number(label="Attn 终止层", value=20, precision=0)
 
-        with gr.Row():
-            prune_btn = gr.Button(" 开始剪枝", variant="primary", size="lg")
-            gr.Markdown("")  # spacer
-        prune_log = gr.Textbox(label="运行日志", lines=14, max_lines=30, autoscroll=True,
-                               placeholder="点击按钮开始剪枝，日志将实时显示在此处...")
+        prune_btn = gr.Button("开始剪枝", variant="primary", size="lg")
+        prune_log = gr.Textbox(
+            label="运行日志", lines=12, max_lines=30,
+            autoscroll=True, interactive=False,
+            placeholder="点击按钮开始剪枝，日志将实时显示在此处...",
+        )
         prune_btn.click(
             fn=run_pruning,
             inputs=[prune_base, prune_ratio, prune_mlp_start, prune_mlp_end,
@@ -236,53 +250,68 @@ def build_experiment():
             outputs=prune_log,
         )
 
-    # ---- Fine-tuning ----
-    with gr.Accordion(" Step 2 &mdash; LoRA 微调恢复", open=False):
-        gr.HTML("""<p style="color:#66758a;font-size:13px;margin:0 0 4px 0;">在剪枝后模型上应用 LoRA 进行低成本后训练，恢复语言能力</p>""")
-        with gr.Row(equal_height=True):
+    # ---- Step 2: Fine-tuning ----
+    with gr.Accordion("Step 2 — LoRA 微调恢复", open=False):
+        gr.Markdown("在剪枝后模型上应用 LoRA 进行低成本后训练，恢复语言能力")
+        with gr.Row():
             with gr.Column(scale=2):
-                ft_prune = gr.Textbox(label="剪枝模型路径 (.bin)", value="prune_log/tinyllama_prune/pytorch_model.bin")
+                ft_prune = gr.Textbox(
+                    label="剪枝模型路径 (.bin)",
+                    value="prune_log/tinyllama_prune/pytorch_model.bin",
+                )
                 ft_base = gr.Textbox(label="基础模型名", value="F:\\Download\\tinyllama_model")
                 ft_out = gr.Textbox(label="输出目录", value="tune_log/tinyllama_tune_25")
             with gr.Column(scale=1):
-                ft_data = gr.Dropdown(["yahma/alpaca-cleaned"], value="yahma/alpaca-cleaned", label="训练数据集")
+                ft_data = gr.Dropdown(
+                    ["yahma/alpaca-cleaned"],
+                    value="yahma/alpaca-cleaned",
+                    label="训练数据集",
+                )
                 ft_lora_r = gr.Number(label="LoRA Rank", value=8, precision=0)
             with gr.Column(scale=1):
-                ft_epochs = gr.Number(label="Epochs", value=2, precision=0)
-                ft_lr = gr.Number(label="Learning Rate", value=1e-4)
+                ft_epochs = gr.Number(label="训练轮数", value=2, precision=0)
+                ft_lr = gr.Number(label="学习率", value=1e-4)
             with gr.Column(scale=1):
-                ft_bs = gr.Number(label="Batch Size", value=4, precision=0)
+                ft_bs = gr.Number(label="批量大小", value=4, precision=0)
 
-        with gr.Row():
-            ft_btn = gr.Button(" 开始微调", variant="primary", size="lg")
-            gr.Markdown("")
-        ft_log = gr.Textbox(label="运行日志", lines=14, max_lines=30, autoscroll=True,
-                            placeholder="点击按钮开始微调，日志将实时显示在此处...")
+        ft_btn = gr.Button("开始微调", variant="primary", size="lg")
+        ft_log = gr.Textbox(
+            label="运行日志", lines=12, max_lines=30,
+            autoscroll=True, interactive=False,
+            placeholder="点击按钮开始微调，日志将实时显示在此处...",
+        )
         ft_btn.click(
             fn=run_finetuning,
             inputs=[ft_prune, ft_data, ft_lora_r, ft_epochs, ft_lr, ft_bs, ft_out, ft_base],
             outputs=ft_log,
         )
 
-    # ---- Quantization ----
-    with gr.Accordion(" Step 3 &mdash; 量化评估", open=False):
-        gr.HTML("""<p style="color:#66758a;font-size:13px;margin:0 0 4px 0;">对比 GPTQ W8 / W4 权重量化对模型体积与精度的影响</p>""")
-        with gr.Row(equal_height=True):
+    # ---- Step 3: Quantization ----
+    with gr.Accordion("Step 3 — 量化评估", open=False):
+        gr.Markdown("对比 GPTQ W8 / W4 权重量化对模型体积与精度的影响")
+        with gr.Row():
             with gr.Column(scale=1):
-                quant_prune = gr.Textbox(label="剪枝模型路径 (.bin)", value="prune_log/tinyllama_prune/pytorch_model.bin")
-                quant_lora = gr.Textbox(label="LoRA 适配器路径", value="tune_log/tinyllama_tune_25")
+                quant_prune = gr.Textbox(
+                    label="剪枝模型路径 (.bin)",
+                    value="prune_log/tinyllama_prune/pytorch_model.bin",
+                )
+                quant_lora = gr.Textbox(
+                    label="LoRA 适配器路径",
+                    value="tune_log/tinyllama_tune_25",
+                )
             with gr.Column(scale=1):
                 quant_methods = gr.CheckboxGroup(
                     ["GPTQ-W8", "GPTQ-W4"],
                     value=["GPTQ-W8", "GPTQ-W4"],
-                    label="量化方法"
+                    label="量化方法",
                 )
 
-        with gr.Row():
-            quant_btn = gr.Button(" 开始量化评估", variant="primary", size="lg")
-            gr.Markdown("")
-        quant_log = gr.Textbox(label="运行日志", lines=14, max_lines=30, autoscroll=True,
-                               placeholder="点击按钮开始量化评估，日志将实时显示在此处...")
+        quant_btn = gr.Button("开始量化评估", variant="primary", size="lg")
+        quant_log = gr.Textbox(
+            label="运行日志", lines=12, max_lines=30,
+            autoscroll=True, interactive=False,
+            placeholder="点击按钮开始量化评估，日志将实时显示在此处...",
+        )
         quant_btn.click(
             fn=run_quantization,
             inputs=[quant_prune, quant_lora, quant_methods],
